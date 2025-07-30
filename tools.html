@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to AI Coding Agents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calm Neutral with Blue Accent -->
+    <!-- Application Structure Plan: A dashboard-style single-page application with a fixed sidebar for navigation. This structure was chosen to allow users non-linear access to the dense information in the report. Instead of scrolling, users can jump to sections of interest, such as the interactive 'Tool Explorer' or the 'Agent Spectrum' comparison. This design prioritizes user-driven exploration over a passive reading experience. Key interactions include filtering tools by category, clicking on agent types to update a comparative chart, and using tabs to view best practices. This approach breaks down complex information into manageable, interactive components, enhancing usability and comprehension. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Distinction between Bots, Assistants, and Agents. Goal: Compare. Viz/Method: Interactive diagram with clickable elements and a dynamic Chart.js radar chart. Interaction: Clicking an agent type updates the chart and displays detailed info. Justification: A visual, interactive comparison is far more engaging and easier to understand than a static table. Library: Chart.js (Canvas).
+        - Report Info: Large tables of AI tools. Goal: Organize & Compare. Viz/Method: A filterable grid of cards. Interaction: Users filter tools by category (e.g., 'Code Generation', 'QA'). Clicking a card reveals detailed information in a modal. Justification: This avoids overwhelming users with large tables. It provides a high-level overview first, with details available on demand, which is a core principle of good information architecture. Library: Vanilla JS for filtering and DOM manipulation.
+        - Report Info: Best practices for collaboration. Goal: Inform. Viz/Method: A tabbed content area. Interaction: Clicking tabs reveals content for each practice. Justification: Tabs organize related content compactly, preventing a long, unappealing wall of text.
+        - Report Info: Future trends. Goal: Inform. Viz/Method: A clean, icon-driven list. Justification: Visual icons and concise text make future-looking statements more scannable and impactful.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link.active {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-weight: 600;
+        }
+        .tool-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white border-r border-slate-200 p-6 hidden lg:block fixed h-full">
+            <h1 class="text-2xl font-bold text-indigo-800 mb-8">AI Agents Guide</h1>
+            <nav id="desktop-nav" class="space-y-2">
+                <a href="#introduction" class="nav-link block p-3 rounded-lg hover:bg-slate-100">Introduction</a>
+                <a href="#spectrum" class="nav-link block p-3 rounded-lg hover:bg-slate-100">The AI Spectrum</a>
+                <a href="#explorer" class="nav-link block p-3 rounded-lg hover:bg-slate-100">Tool Explorer</a>
+                <a href="#collaboration" class="nav-link block p-3 rounded-lg hover:bg-slate-100">Collaboration</a>
+                <a href="#future" class="nav-link block p-3 rounded-lg hover:bg-slate-100">The Future</a>
+                <a href="#news" class="nav-link block p-3 rounded-lg hover:bg-slate-100">Latest AI News</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Mobile Header -->
+            <header class="lg:hidden bg-white border-b border-slate-200 p-4 sticky top-0 z-10">
+                 <h1 class="text-xl font-bold text-indigo-800 text-center">AI Coding Agents Guide</h1>
+                 <nav id="mobile-nav" class="flex justify-center space-x-2 mt-2 overflow-x-auto">
+                    <a href="#introduction" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">Intro</a>
+                    <a href="#spectrum" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">Spectrum</a>
+                    <a href="#explorer" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">Tools</a>
+                    <a href="#collaboration" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">Collab</a>
+                    <a href="#future" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">Future</a>
+                    <a href="#news" class="nav-link text-sm whitespace-nowrap px-3 py-1 rounded-full">News</a>
+                 </nav>
+            </header>
+
+            <div class="p-4 md:p-8 lg:p-12">
+                <!-- Introduction Section -->
+                <section id="introduction" class="min-h-screen py-16">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-4xl font-bold text-slate-900 mb-4">The New Era of Software Development</h2>
+                        <p class="text-lg text-slate-600 mb-8">This application provides an interactive guide to the world of AI Coding Agents. We'll move beyond static text to explore how these tools are transforming software development. Discover their capabilities, compare different tools, and understand how to collaborate with them effectively to build better software, faster.</p>
+                        <div class="grid md:grid-cols-3 gap-6 text-center">
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <span class="text-4xl font-bold text-indigo-600" id="speed-stat">1</span><span class="text-4xl font-bold text-indigo-600">x</span>
+                                <p class="text-slate-500 mt-2">Faster Development</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <span class="text-4xl font-bold text-indigo-600" id="cost-stat">1</span><span class="text-4xl font-bold text-indigo-600">%</span>
+                                <p class="text-slate-500 mt-2">Maintenance Reduction</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <span class="text-4xl font-bold text-indigo-600">24/7</span>
+                                <p class="text-slate-500 mt-2">Continuous Operation</p>
+                            </div>
+                        </div>
+                        <div class="mt-12 bg-indigo-50 border-l-4 border-indigo-500 p-6 rounded-r-lg">
+                            <h3 class="font-semibold text-slate-800 mb-2">What are AI Coding Agents?</h3>
+                            <p class="text-slate-700">AI coding agents are advanced software systems using generative AI to autonomously pursue goals and execute complex tasks. They go beyond simple automation by reasoning, planning, and learning from interactions. This guide will help you understand their profound impact on the software development lifecycle (SDLC).</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Spectrum Section -->
+                <section id="spectrum" class="min-h-screen py-16">
+                    <div class="max-w-5xl mx-auto">
+                        <h2 class="text-3xl font-bold text-center mb-4">The AI Spectrum: Bots, Assistants, and Agents</h2>
+                        <p class="text-lg text-slate-600 text-center mb-12">Not all AI is created equal. The key difference lies in autonomy and capability. Interact with the diagram below to see how these entities compare and understand the unique power of AI Agents.</p>
+                        <div class="grid lg:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <div class="space-y-4" id="spectrum-controls">
+                                    <div data-agent="bot" class="spectrum-card bg-white p-6 rounded-xl shadow-sm border-2 border-transparent cursor-pointer hover:border-indigo-400">
+                                        <h3 class="font-bold text-xl">🤖 Bot</h3>
+                                        <p class="text-slate-600">Follows pre-programmed rules. Reactive and task-specific.</p>
+                                    </div>
+                                    <div data-agent="assistant" class="spectrum-card bg-white p-6 rounded-xl shadow-sm border-2 border-transparent cursor-pointer hover:border-indigo-400">
+                                        <h3 class="font-bold text-xl">🤝 AI Assistant</h3>
+                                        <p class="text-slate-600">Collaborates with users, responding to requests. Less autonomous.</p>
+                                    </div>
+                                    <div data-agent="agent" class="spectrum-card bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-500">
+                                        <h3 class="font-bold text-xl">🚀 AI Agent</h3>
+                                        <p class="text-slate-600">Proactively pursues goals with high autonomy, learning and adapting.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="spectrumChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tool Explorer Section -->
+                <section id="explorer" class="min-h-screen py-16">
+                    <div class="max-w-7xl mx-auto">
+                        <h2 class="text-3xl font-bold text-center mb-4">AI Coding Tool Explorer</h2>
+                        <p class="text-lg text-slate-600 text-center mb-8">The landscape of AI coding tools is vast and growing. Use the filters below to explore a curated list of agents based on their primary function in the software development lifecycle.</p>
+                        <div id="filter-container" class="flex flex-wrap justify-center gap-2 mb-12">
+                            <!-- Filters will be injected here by JS -->
+                        </div>
+                        <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <!-- Tool cards will be injected here by JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Collaboration Section -->
+                <section id="collaboration" class="min-h-screen py-16">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-3xl font-bold text-center mb-4">Best Practices for Human-AI Collaboration</h2>
+                        <p class="text-lg text-slate-600 text-center mb-12">To maximize the benefits of AI coding agents, it's essential to establish effective collaboration patterns. This isn't about replacement; it's about augmentation. Here are key strategies for a successful human-AI partnership.</p>
+                        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+                            <div class="mb-4 border-b border-slate-200">
+                                <nav id="collab-tabs" class="flex space-x-2 sm:space-x-4" aria-label="Tabs">
+                                    <!-- Collaboration tabs will be injected here -->
+                                </nav>
+                            </div>
+                            <div id="collab-content">
+                                <!-- Collaboration content will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Future Section -->
+                <section id="future" class="min-h-screen py-16">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-3xl font-bold text-center mb-4">The Future of AI in Software Development</h2>
+                        <p class="text-lg text-slate-600 text-center mb-12">The evolution of AI coding agents is accelerating. The future points towards even more sophisticated, autonomous, and integrated systems that will continue to redefine developer roles and productivity.</p>
+                        <div class="space-y-8">
+                           <div class="flex items-start space-x-4">
+                               <div class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">🚀</div>
+                               <div>
+                                   <h3 class="text-xl font-semibold">Increased Autonomy</h3>
+                                   <p class="text-slate-600 mt-1">Agents will become more proactive, making independent decisions and forming multi-agent systems to tackle complex goals, reducing the need for constant human oversight.</p>
+                               </div>
+                           </div>
+                           <div class="flex items-start space-x-4">
+                               <div class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">🧠</div>
+                               <div>
+                                   <h3 class="text-xl font-semibold">Deeper Contextual Understanding</h3>
+                                   <p class="text-slate-600 mt-1">Future agents will leverage vast project histories and organizational knowledge to provide highly personalized and accurate assistance.</p>
+                               </div>
+                           </div>
+                           <div class="flex items-start space-x-4">
+                               <div class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">🧩</div>
+                               <div>
+                                   <h3 class="text-xl font-semibold">Seamless Orchestration</h3>
+                                   <p class="text-slate-600 mt-1">AI will be deeply embedded across the entire SDLC, orchestrating complex workflows across a diverse array of tools and platforms, from design to deployment.</p>
+                               </div>
+                           </div>
+                           <div class="flex items-start space-x-4">
+                               <div class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">🛡️</div>
+                               <div>
+                                   <h3 class="text-xl font-semibold">Proactive AI Governance</h3>
+                                   <p class="text-slate-600 mt-1">As AI becomes more pervasive, robust governance frameworks will become a strategic imperative, providing real-time monitoring and risk assessment to ensure ethical and responsible deployment.</p>
+                               </div>
+                           </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Latest AI News Section -->
+                <section id="news" class="min-h-screen py-16">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-3xl font-bold text-center mb-4">Latest AI Tools & Products News</h2>
+                        <p class="text-lg text-slate-600 text-center mb-8">Stay updated with recent developments in the world of AI coding tools and products. (Note: This is a static snapshot of recent news, not real-time updates.)</p>
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                <h3 class="font-semibold text-xl mb-2">ChatGPT and Generative AI Tools Boost Developer Productivity</h3>
+                                <p class="text-slate-600 text-sm">Recent reports highlight how tools like ChatGPT are fitting into software developers' workflows, providing an instant productivity boost by generating boilerplate code, translating/refactoring code, and automating rote tasks. These tools are proving invaluable for even complex coding problems.</p>
+                                <a href="https://leaddev.com/velocity/generative-ai-programming-tools-developers" target="_blank" class="text-indigo-600 hover:underline text-sm mt-2 block">Read More &rarr;</a>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                <h3 class="font-semibold text-xl mb-2">JetBrains AI Assistant Enhances IDE Productivity</h3>
+                                <p class="text-slate-600 text-sm">JetBrains is integrating AI Assistant directly into its IDEs, offering intelligent context-aware coding assistance. This aims to streamline development processes, allowing developers to code smarter and ship faster across various JetBrains products.</p>
+                                <a href="https://www.jetbrains.com/ai/" target="_blank" class="text-indigo-600 hover:underline text-sm mt-2 block">Read More &rarr;</a>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                <h3 class="font-semibold text-xl mb-2">New AI-First IDEs Like Cursor Emerge</h3>
+                                <p class="text-slate-600 text-sm">The market is seeing the rise of AI-first Integrated Development Environments (IDEs) such as Cursor. Unlike traditional IDEs with AI add-ons, these new platforms make AI a core part of the coding experience, designed from the ground up for AI-human collaboration.</p>
+                                <a href="https://www.cursor.com/" target="_blank" class="text-indigo-600 hover:underline text-sm mt-2 block">Read More &rarr;</a>
+                            </div>
+                             <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                                <h3 class="font-semibold text-xl mb-2">Amazon Q Developer Delivers High Accuracy in Vulnerability Detection</h3>
+                                <p class="text-slate-600 text-sm">Amazon Q Developer is noted for its high accuracy in detecting security vulnerabilities and providing instantaneous remediations. This tool is designed to help improve the reliability and security of code within the AWS ecosystem, with strong agentic capabilities for complex tasks.</p>
+                                <a href="https://aws.amazon.com/q/developer/" target="_blank" class="text-indigo-600 hover:underline text-sm mt-2 block">Read More &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Tool Details -->
+    <div id="toolModal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" onclick="closeModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="sticky top-0 bg-white p-4 sm:p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-2xl font-bold">Tool Details</h3>
+                <button onclick="closeModal()" class="text-slate-500 hover:text-slate-800 text-3xl">&times;</button>
+            </div>
+            <div id="modalBody" class="p-4 sm:p-6">
+                <!-- Modal content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const aiToolsData = [
+        { name: 'GitHub Copilot', category: 'Code Generation', useCases: 'Inline code completion, generating functions/methods, writing unit tests.', strengths: 'Deep contextual awareness, wide IDE integration, strong code completion.', weaknesses: 'Suggestions may need review for security, edge cases, or efficiency.', pricing: 'Paid tiers, with some free access limitations.', link: 'https://github.com/features/copilot' },
+        { name: 'Amazon Q Developer', category: 'Code Generation', useCases: 'Real-time code suggestions, vulnerability scanning, unit testing, code refactoring.', strengths: 'High accuracy in vulnerability detection, strong agentic capabilities, integrates with AWS ecosystem.', weaknesses: 'Free tier has monthly interaction limits.', pricing: 'Free Tier available, with paid options.', link: 'https://aws.amazon.com/q/developer/' },
+        { name: 'Google Jules AI', category: 'Code Generation', useCases: 'Autonomous feature development, analyzing codebases, creating implementation plans, independently executing features.', strengths: 'Autonomous execution of full features, asynchronous operation, multi-language support.', weaknesses: 'Limited to GitHub repositories, struggles with extremely large codebases.', pricing: 'Free beta; pricing tiers planned.', link: 'https://jules.ai/' },
+        { name: 'Smol Developer', category: 'Code Generation', useCases: 'Rapid prototyping of small to medium projects, bootstrapping new initiatives.', strengths: 'Rapid prototyping, versatile for varied simple apps, handles cross-file dependencies.', weaknesses: 'Requires careful prompt engineering, less effective for complex full-stack apps.', pricing: 'Free (requires user\'s own API key).', link: 'https://github.com/smol-ai/smol-developer' },
+        { name: 'Sourcegraph Cody', category: 'Code Generation', useCases: 'Accelerating development in complex codebases, automating tasks, enterprise-level code assistance.', strengths: 'Built for large organizations, deep codebase context, strong security controls.', weaknesses: 'Enterprise-focused, potentially higher cost for smaller teams.', pricing: 'Enterprise pricing.', link: 'https://sourcegraph.com/cody' },
+        { name: 'CodePal AI', category: 'Refactoring', useCases: 'Generating code quickly, translating code between languages, simplifying/refactoring existing code.', strengths: 'Broad language support, user-friendly, comprehensive coding assistance.', weaknesses: 'Varying efficiency and accuracy, potential over-reliance.', pricing: 'Freemium, with paid plans.', link: 'https://codepal.ai/' },
+        { name: 'Codiga', category: 'Debugging', useCases: 'Static code analysis, real-time security and quality checks, detecting bugs and vulnerabilities.', strengths: 'Real-time analysis, single-click autofixing, strong security analysis.', weaknesses: 'Some features require training for optimal usage, advanced scans are paid.', pricing: 'Freemium, with paid plans.', link: 'https://www.codiga.io/' },
+        { name: 'AI Code Mentor', category: 'Refactoring', useCases: 'Code optimization, refactoring, improving readability, finding bugs.', strengths: 'Best for code optimization, personalized explanations, good for learning.', weaknesses: 'Refactoring is a paid feature, potential for over-reliance.', pricing: 'Freemium, with PRO plans.', link: 'https://www.aicodementor.com/' },
+        { name: 'ACCELQ Autopilot', category: 'QA & Testing', useCases: 'Autonomous test discovery, creation, and maintenance; enterprise test automation.', strengths: 'Codeless automation, 80% reduction in test maintenance, strong CI/CD integration.', weaknesses: 'Enterprise solution, may have a higher learning curve or cost.', pricing: 'Pricing upon request.', link: 'https://www.accelq.com/products/autopilot/' },
+        { name: 'Testsigma', category: 'QA & Testing', useCases: 'Codeless automated testing, test case creation, management, and execution; end-to-end testing (web, mobile, API, Salesforce, SAP, desktop); test management.', strengths: 'User-friendly, instant test generation, auto-healing tests, extensive coverage.', weaknesses: 'Limitations with test export, above-average pricing.', pricing: 'Commercial product.', link: 'https://testsigma.com/' },
+        { name: 'Mabl', category: 'QA & Testing', useCases: 'AI-native test automation for web, mobile, API; automated regression testing.', strengths: 'Agentic workflows, adaptive auto-healing, cloud-native and scalable.', weaknesses: 'As a comprehensive platform, may have a learning curve.', pricing: 'Commercial product.', link: 'https://www.mabl.com/' },
+        { name: 'Firebase Studio', category: 'Full-Stack', useCases: 'Building backends, frontends, mobile apps; coding, debugging, testing.', strengths: 'Comprehensive full-stack environment, AI assistance across SDLC, collaboration features.', weaknesses: 'Currently in preview, waitlist for some features.', pricing: 'Free during preview.', link: 'https://firebase.google.com/products/studio' },
+        { name: 'Replit AI', category: 'Full-Stack', useCases: 'Generating entire projects from descriptions, handling full-stack applications.', strengths: 'Seamless cloud integration (no setup), idea to deployment within platform.', weaknesses: 'Context retention could be improved.', pricing: 'Commercial product.', link: 'https://replit.com/ai' },
+        { name: 'Alteryx', category: 'Data Science', useCases: 'Analytics automation, AI-ready data preparation, data blending, advanced analytics.', strengths: 'User-friendly drag-and-drop interface, AI-guided data automation, ensures governance.', weaknesses: 'As a broad platform, may have a learning curve for advanced features.', pricing: 'Offers free trial.', link: 'https://www.alteryx.com/' },
+        { name: 'AWS SageMaker', category: 'Data Science', useCases: 'Comprehensive MLOps solution, accelerating model development, centralized ML governance.', strengths: 'Accelerates model development, strong governance, integrates ML CI/CD, continuous quality monitoring.', weaknesses: 'Requires familiarity with AWS ecosystem.', pricing: 'Pay-as-you-go, with free tier.', link: 'https://aws.amazon.com/sagemaker/' },
+        { name: 'Google Cloud Vertex AI', category: 'Data Science', useCases: 'Building, deploying, and scaling AI models; MLOps automation; model evaluation, orchestration, management.', strengths: 'Comprehensive MLOps tools, automates ML processes, manages models throughout lifecycle.', weaknesses: 'Requires familiarity with Google Cloud ecosystem.', pricing: 'Pay-as-you-go, with free credits.', link: 'https://cloud.google.com/vertex-ai' },
+        { name: 'Databricks', category: 'Data Science', useCases: 'Data lakehouse platform, unifying data warehouses and lakes, natural language data search and code assistance, LLM integration/fine-tuning.', strengths: 'Unified platform for data and ML, strong governance, supports complex ETL.', weaknesses: 'As a comprehensive platform, may have a learning curve.', pricing: 'Pricing not specified.', link: 'https://www.databricks.com/' },
+        { name: 'MLflow', category: 'Data Science', useCases: 'Managing machine learning lifecycle components: experiment tracking, repeatability, deployment, model registry.', strengths: 'Open-source, widely adopted, modular components, supports various languages.', weaknesses: 'Requires more manual setup compared to fully managed platforms.', pricing: 'Free (open-source).', link: 'https://mlflow.org/' },
+        { name: 'DVC (Data Version Control)', category: 'Data Science', useCases: 'Experiment tracking, building/visualizing ML pipelines, achieving reproducibility, data/model registration, CI/CD for ML.', strengths: 'Open-source, strong version control for data and models, supports reproducibility.', weaknesses: 'Requires integration with other tools for a full MLOps solution.', pricing: 'Free (open-source).', link: 'https://dvc.org/' },
+        { name: 'ChatGPT / Google Gemini', category: 'General AI Assistant', useCases: 'Project planning, data analysis, code generation, summarization, real-time data access.', strengths: 'Versatile, natural language interaction, can reduce coding times, access to real-time data (Gemini).', weaknesses: 'Not purpose-built MLOps platforms, may require more manual orchestration.', pricing: 'Freemium/Subscription.', link: 'https://chat.openai.com/ / https://gemini.google.com/' },
+        { name: 'TensorFlow', category: 'ML Framework', useCases: 'Building and training machine learning models, deep learning applications.', strengths: 'Highly flexible, large community support, extensive tools and libraries.', weaknesses: 'Steeper learning curve, can be complex for beginners.', pricing: 'Free (open-source).', link: 'https://www.tensorflow.org/' },
+        { name: 'Microsoft Responsible AI Toolbox', category: 'Governance', useCases: 'Operationalizing Responsible AI, assessing models, ensuring safe, trustworthy, and ethical AI systems.', strengths: 'Holistic approach to responsible AI, customizable dashboard, integrates insights from various tools.', weaknesses: 'Requires understanding of responsible AI principles for optimal usage.', pricing: 'Part of Microsoft enterprise offerings.', link: 'https://www.microsoft.com/en-us/ai/responsible-ai-resources' },
+        { name: 'Credo AI', category: 'Governance', useCases: 'Adopting, scaling, and governing AI safely; managing generative AI risk; tracking compliance to AI regulation/standards.', strengths: 'Focus on generative AI guardrails, comprehensive risk management, automates compliance checks.', weaknesses: 'Enterprise-focused, potentially complex initial setup.', pricing: 'Offers demo requests.', link: 'https://credo.ai/' },
+        { name: 'Fairly AI', category: 'Governance', useCases: 'AI Governance, Risk, and Compliance Management; mitigating AI risk at scale; staying ahead of global AI regulations.', strengths: 'Addresses major regulations, mitigates AI risk at scale, provides detailed reporting.', weaknesses: 'Not explicitly detailed.', pricing: 'Offers demo requests.', link: 'https://fairly.ai/' },
+        { name: 'Holistic AI', category: 'Governance', useCases: 'End-to-end AI Governance, comprehensive oversight across AI lifecycle, risk mitigation, confident innovation.', strengths: 'Full ecosystem visibility, enhances AI resilience, aligns with priorities/policies.', weaknesses: 'Not explicitly detailed.', pricing: 'Not specified.', link: 'https://holisticai.com/' },
+        { name: 'IBM watsonx.governance', category: 'Governance', useCases: 'Mitigating risks, meeting regulations, automating governance, creating responsible/explainable AI workflows.', strengths: 'Strong focus on responsible AI development through trusted enterprise data and governed processes.', weaknesses: 'Not explicitly detailed.', pricing: 'Not specified.', link: 'https://www.ibm.com/products/watsonx-governance' },
+        { name: 'Anthropic (Claude models)', category: 'Foundational Models (Integration)', useCases: 'Safety, alignment, and governance of AI models; adversarial testing (red-teaming); powering AI agents.', strengths: 'Strong emphasis on safety and ethical AI, tools for adversarial testing, powerful general-purpose LLMs.', weaknesses: 'Primarily a model developer, not a full governance platform or end-user tool.', pricing: 'API usage based.', link: 'https://www.anthropic.com/' },
+        { name: 'UXPilot', category: 'Design & Prototyping', useCases: 'AI-assisted UI/UX design, generating design concepts, rapid prototyping of interfaces.', strengths: 'Accelerates design workflows, helps non-designers create UIs, integrates with design tools.', weaknesses: 'May lack creative nuance compared to human designers, outputs need refinement.', pricing: 'Subscription-based.', link: 'https://uxpilot.ai/' },
+        { name: 'usegalileo', category: 'Design & Prototyping', useCases: 'Generating UI designs from text prompts, creating editable UI components, design system integration.', strengths: 'Transforms natural language into design, generates production-ready UI, supports various design systems.', weaknesses: 'Outputs may require manual adjustments for pixel perfection, learning curve for optimal prompting.', pricing: 'Subscription-based.', link: 'https://www.usegalileo.ai/' },
+        { name: 'Google Gemini CLI', category: 'General AI Assistant', useCases: 'Interacting with Gemini models via command line, scripting AI tasks, integrating AI into development workflows.', strengths: 'Direct access to Gemini capabilities, flexible for scripting, ideal for developers who prefer CLI.', weaknesses: 'Requires command-line proficiency, less visual than GUI tools.', pricing: 'API usage based.', link: 'https://ai.google.dev/gemini/docs/reference/rest/v1beta/models/generateContent' },
+        { name: 'Claude Coden', category: 'Code Generation', useCases: 'Generating code snippets, assisting with coding challenges, providing explanations for code.', strengths: 'Leverages advanced Claude models for code tasks, good for quick code generation and understanding.', weaknesses: 'Specific capabilities depend on the underlying Claude model version, may require fine-tuning for specific coding styles.', pricing: 'API usage based.', link: 'https://www.anthropic.com/product' },
+        { name: 'n8n', category: 'Workflow Automation', useCases: 'Automating development workflows, connecting APIs, orchestrating tasks between different services, building custom integrations.', strengths: 'Open-source, highly flexible, supports a vast number of integrations, visual workflow builder.', weaknesses: 'Can be complex for beginners, requires self-hosting or managed service.', pricing: 'Open-source (free), Cloud plans available.', link: 'https://n8n.io/' },
+        { name: 'Llama models (Meta)', category: 'Foundational Models (Integration)', useCases: 'Building custom AI applications, fine-tuning for specific tasks (e.g., code generation, natural language processing), research and development.', strengths: 'Open-source, highly customizable, strong community support, can be run locally.', weaknesses: 'Requires significant computational resources for training/inference, needs technical expertise to implement.', pricing: 'Free (open-source).', link: 'https://ai.meta.com/llama/' },
+        { name: 'zapier', category: 'Workflow Automation', useCases: 'Connecting web applications, automating repetitive tasks, building no-code integrations between development tools.', strengths: 'Extremely easy to use, supports thousands of apps, no coding required for basic automation.', weaknesses: 'Less flexible for complex custom logic, can become expensive with high usage.', pricing: 'Freemium, with paid plans.', link: 'https://zapier.com/' },
+        { name: 'open ai', category: 'Foundational Models (Integration)', useCases: 'Powering various AI applications, generating code, natural language processing, image generation (via DALL-E), powering AI agents.', strengths: 'Leading-edge models (GPT series), powerful and versatile, widely adopted for various AI tasks.', weaknesses: 'API usage costs can be significant, models are proprietary.', pricing: 'API usage based.', link: 'https://openai.com/' },
+        { name: 'Hugging Face', category: 'ML Platform/Hub', useCases: 'Discovering and sharing ML models, datasets, and demos; hosting and deploying models; collaborating on ML projects.', strengths: 'Vast repository of pre-trained models, strong community, tools for model training and deployment.', weaknesses: 'Not an AI agent itself, more of a platform/ecosystem.', pricing: 'Freemium, with paid tiers for enterprise features.', link: 'https://huggingface.co/' },
+        { name: 'Langchain', category: 'Agent Framework', useCases: 'Building applications with Large Language Models (LLMs), creating multi-step AI agents, connecting LLMs to external data sources and tools.', strengths: 'Simplifies LLM application development, modular and flexible, strong community support, extensive integrations.', weaknesses: 'Can have a steep learning curve, framework is rapidly evolving.', pricing: 'Free (open-source).', link: 'https://www.langchain.com/' },
+        { name: 'Langgraph', category: 'Agent Framework', useCases: 'Building robust, stateful LLM applications, creating complex multi-agent systems, managing conversational flows.', strengths: 'Extends LangChain for stateful applications, enables more complex agent behaviors, good for multi-turn interactions.', weaknesses: 'Newer than LangChain, requires understanding of graph-based programming.', pricing: 'Free (open-source).', link: 'https://langchain-ai.github.io/langgraph/' },
+        { name: 'Langsmith', category: 'LLM Ops & Monitoring', useCases: 'Debugging, testing, evaluating, and monitoring LLM applications and agents; tracking prompts and responses.', strengths: 'Essential for developing reliable LLM apps, provides visibility into agent behavior, helps optimize performance.', weaknesses: 'Primarily for LLM development, not a general coding agent.', pricing: 'Subscription-based.', link: 'https://www.langchain.com/langsmith' },
+        { name: 'qodo.ai', category: 'No-Code/Low-Code Dev', useCases: 'Building web applications and internal tools without extensive coding, rapid application development for business users.', strengths: 'Enables rapid development for non-developers, visual interface, reduces development time and cost.', weaknesses: 'Limited customization compared to full-code development, may not handle highly complex applications.', pricing: 'Subscription-based.', link: 'https://www.qodo.ai/' },
+        { name: 'rocket.new', category: 'Rapid App Development', useCases: 'Quickly scaffolding and deploying web applications, prototyping new ideas, building MVPs.', strengths: 'Focus on speed and simplicity, helps launch apps quickly, often integrates with modern tech stacks.', weaknesses: 'May offer less control over underlying infrastructure, best for straightforward projects.', pricing: 'Subscription-based.', link: 'https://www.rocket.new/' },
+        { name: 'Bolt.new', category: 'Full-Stack', useCases: 'AI-powered web development, prompting, running, editing, and deploying full-stack apps by description.', strengths: 'Rapid scaffolding of full-stack web apps, flow-based coding, browser-accessible.', weaknesses: 'Domain-specific (web apps only), hosted service and models are proprietary.', pricing: 'Pricing not specified, implied commercial product.', link: 'https://bolt.new/' },
+        { name: 'Windsurf', category: 'Full-Stack', useCases: 'AI-powered web development, generating web components and pages from descriptions.', strengths: 'Focus on front-end generation, rapid prototyping of UI elements.', weaknesses: 'May require integration with existing backend, specific capabilities depend on AI model.', pricing: 'Not specified.', link: 'https://windsurf.ai/' },
+        { name: 'UXPilot', category: 'Design & Prototyping', useCases: 'AI-assisted UI/UX design, generating design concepts, rapid prototyping of interfaces.', strengths: 'Accelerates design workflows, helps non-designers create UIs, integrates with design tools.', weaknesses: 'May lack creative nuance compared to human designers, outputs need refinement.', pricing: 'Subscription-based.', link: 'https://uxpilot.ai/' },
+        { name: 'Emergent', category: 'Code Generation', useCases: 'AI-powered code generation, focusing on specific frameworks or languages.', strengths: 'Specialized generation for certain tech stacks, high quality for supported areas.', weaknesses: 'Limited scope to specific frameworks, may not be suitable for general-purpose coding.', pricing: 'Not specified.', link: 'https://emergent.sh/' },
+        { name: 'Qwen (Alibaba Cloud)', category: 'Foundational Models (Integration)', useCases: 'Building custom AI applications, code generation, natural language processing, multi-modal tasks.', strengths: 'Powerful large language model, supports various tasks, backed by Alibaba Cloud.', weaknesses: 'Requires technical expertise for integration, primarily for developers building on top of it.', pricing: 'API usage based.', link: 'https://www.alibabacloud.com/product/aliyun-qwen' },
+        { name: 'Kiro', category: 'AI Assistant', useCases: 'General AI assistance for developers, answering coding questions, providing explanations.', strengths: 'Broad knowledge base, helpful for quick queries and learning.', weaknesses: 'Not a code generator or full agent, more of a conversational assistant.', pricing: 'Not specified.', link: 'https://kiro.ai/' },
+        { name: 'Kimi (Moonshot AI)', category: 'General AI Assistant', useCases: 'Long-context window processing, summarizing long documents, code analysis, creative writing.', strengths: 'Exceptional long-context understanding, good for complex codebases and large documents.', weaknesses: 'Primary focus on long context, may not be optimized for rapid, short code generation.', pricing: 'API usage based.', link: 'https://www.kimi.ai/' },
+        { name: 'DeepSeek Coder (DeepSeek AI)', category: 'Code Generation', useCases: 'Code generation, code completion, code explanation, focused on programming tasks.', strengths: 'Highly performant for coding tasks, strong open-source community support for models.', weaknesses: 'Requires technical setup for local deployment, primarily a model, not an end-user tool.', pricing: 'Free (open-source models), API usage for hosted versions.', link: 'https://deepseek.com/coder' },
+        { name: 'vibekanban.com', category: 'Project Management', useCases: 'AI-powered project management, task automation, workflow optimization, Kanban board management.', strengths: 'Automates routine project tasks, visual Kanban interface, improves team productivity.', weaknesses: 'Specific AI capabilities not detailed, may require integration with other dev tools.', pricing: 'Subscription-based.', link: 'https://www.vibekanban.com/' },
+        { name: 'relume.io', category: 'Web Design & Dev', useCases: 'AI-powered website building, generating website components, content creation, design system integration.', strengths: 'Rapid website prototyping, integrates with design systems, focuses on visual development.', weaknesses: 'May require manual coding for complex interactions, primarily for front-end.', pricing: 'Subscription-based.', link: 'https://www.relume.io/' },
+        { name: 'stitch.withgoogle.com', category: 'Workflow Automation', useCases: 'Automating data integration, connecting various data sources, building data pipelines.', strengths: 'Seamless integration with Google services, simplifies data warehousing, robust data pipeline creation.', weaknesses: 'Primarily for data integration, not direct code generation.', pricing: 'Not specified, likely part of Google Cloud.', link: 'https://stitch.withgoogle.com/' },
+        { name: 'zof.ai', category: 'No-Code/Low-Code Dev', useCases: 'AI-powered application development, building custom software without coding, rapid business application creation.', strengths: 'Empowers non-developers, accelerates app creation, focuses on business logic.', weaknesses: 'Limited flexibility for highly custom features, specific AI capabilities not detailed.', pricing: 'Not specified.', link: 'https://zof.ai/' },
+        { name: 'voideditor.com', category: 'IDE/Editor', useCases: 'AI-enhanced code editing, smart code suggestions, integrated development environment.', strengths: 'Combines editor features with AI assistance, potentially faster coding experience.', weaknesses: 'Specific AI features not detailed, may be a newer tool.', pricing: 'Not specified.', link: 'https://voideditor.com/' },
+        { name: 'Trae AI', category: 'AI Assistant', useCases: 'General AI assistance, potentially for business and development tasks, information retrieval.', strengths: 'Versatile AI assistant, broad applicability.', weaknesses: 'Specific coding assistance features not detailed, general-purpose AI.', pricing: 'Not specified.', link: 'https://trae.ai/' },
+        { name: 'Zenith, Summit, Lobster, Starfish, Nectarine, and o3-alpha', category: 'Foundational Models (Integration)', useCases: 'Powering various AI applications, research, and development, often specialized for specific tasks (e.g., code, language, vision).', strengths: 'Cutting-edge research models, push the boundaries of AI capabilities.', weaknesses: 'Often not directly available as end-user tools, require significant technical expertise to implement.', pricing: 'Not specified, typically research/API access.', link: 'https://www.google.com/search?q=Zenith+Summit+Lobster+Starfish+Nectarine+o3-alpha+AI+models' },
+        { name: 'Roo Code', category: 'Code Generation', useCases: 'AI-powered code generation, focusing on specific programming languages or frameworks.', strengths: 'Specialized for certain tech stacks, high quality for supported areas.', weaknesses: 'Limited scope to specific frameworks, may not be suitable for general-purpose coding.', pricing: 'Not specified.', link: 'https://roocode.com/' },
+        { name: 'Git Spark', category: 'Code Generation', useCases: 'AI-assisted Git operations, generating commit messages, code review suggestions, branch management.', strengths: 'Integrates AI directly into Git workflow, streamlines version control tasks.', weaknesses: 'Specific AI capabilities not fully detailed, focused on Git.', pricing: 'Not specified.', link: 'https://gitspark.dev/' },
+        { name: 'Manus Agents', category: 'Agent Framework', useCases: 'Building and orchestrating multi-agent systems, enabling agents to interact with external tools and APIs, complex workflow automation.', strengths: 'Designed for robust agent orchestration, supports complex multi-step tasks, flexible for various agent types.', weaknesses: 'Requires technical expertise to implement and configure, not an end-user tool.', pricing: 'Not specified, likely commercial or open-source framework.', link: 'https://www.manusmachina.com/ (Note: This link is for Manus Machina VR gloves. A specific "Manus Agents" AI tool/framework was not found; this entry is a placeholder based on the general concept of AI agents.)' },
+        { name: 'Google Agent', category: 'Agent Framework', useCases: 'Developing custom AI agents leveraging Google\'s foundational models, integrating agentic capabilities into applications, orchestrating complex AI workflows.', strengths: 'Leverages Google\'s advanced AI research and infrastructure, strong integration with Google Cloud services, supports diverse agent applications.', weaknesses: 'Details on a singular "Google Agent" or "Agent Protocol" are broad, may refer to various underlying Google AI technologies.', pricing: 'API usage based, varies by underlying Google AI services.', link: 'https://ai.google.dev/' }
+    ];
+
+    const filterContainer = document.getElementById('filter-container');
+    const toolsGrid = document.getElementById('tools-grid');
+
+    const categories = ['All', ...new Set(aiToolsData.map(tool => tool.category))].sort();
+
+    categories.forEach(category => {
+        const button = document.createElement('button');
+        button.className = `filter-btn px-4 py-2 rounded-full text-sm font-medium transition ${category === 'All' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-700 hover:bg-indigo-100'}`;
+        button.textContent = category;
+        button.dataset.category = category;
+        filterContainer.appendChild(button);
+    });
+
+    const displayTools = (filter = 'All') => {
+        toolsGrid.innerHTML = '';
+        const filteredTools = filter === 'All' ? aiToolsData : aiToolsData.filter(tool => tool.category === filter);
+
+        filteredTools.forEach(tool => {
+            const card = document.createElement('div');
+            card.className = 'tool-card bg-white p-6 rounded-xl shadow-md cursor-pointer';
+            card.innerHTML = `
+                <h3 class="font-bold text-lg text-slate-800">${tool.name}</h3>
+                <p class="text-sm text-indigo-600 font-medium my-2">${tool.category}</p>
+                <p class="text-slate-600 text-sm">${tool.useCases}</p>
+            `;
+            card.onclick = () => showModal(tool);
+            toolsGrid.appendChild(card);
+        });
+    };
+
+    filterContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-btn')) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-white', 'text-slate-700', 'hover:bg-indigo-100');
+            });
+            e.target.classList.add('bg-indigo-600', 'text-white');
+            e.target.classList.remove('bg-white', 'text-slate-700', 'hover:bg-indigo-100');
+            displayTools(e.target.dataset.category);
+        }
+    });
+
+    displayTools();
+
+    // Spectrum Chart
+    const spectrumData = {
+        bot: { label: 'Bot', data: [2, 1, 1], color: 'rgba(255, 99, 132, 0.5)' },
+        assistant: { label: 'AI Assistant', data: [5, 4, 4], color: 'rgba(54, 162, 235, 0.5)' },
+        agent: { label: 'AI Agent', data: [9, 8, 8], color: 'rgba(75, 192, 192, 0.5)' }
+    };
+
+    const ctx = document.getElementById('spectrumChart').getContext('2d');
+    const spectrumChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Autonomy', 'Complexity', 'Learning Capability'],
+            datasets: [
+                {
+                    label: 'AI Agent',
+                    data: spectrumData.agent.data,
+                    backgroundColor: spectrumData.agent.color,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    pointLabels: { font: { size: 14 } },
+                    suggestedMin: 0,
+                    suggestedMax: 10,
+                    ticks: {
+                        stepSize: 2,
+                        backdropColor: 'rgba(255, 255, 255, 0.75)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+
+    document.getElementById('spectrum-controls').addEventListener('click', e => {
+        const card = e.target.closest('.spectrum-card');
+        if (card) {
+            document.querySelectorAll('.spectrum-card').forEach(c => c.classList.remove('border-indigo-500'));
+            card.classList.add('border-indigo-500');
+            const agentType = card.dataset.agent;
+            const newData = spectrumData[agentType];
+            spectrumChart.data.datasets[0].label = newData.label;
+            spectrumChart.data.datasets[0].data = newData.data;
+            spectrumChart.data.datasets[0].backgroundColor = newData.color;
+            spectrumChart.data.datasets[0].borderColor = newData.color.replace('0.5', '1');
+            spectrumChart.data.datasets[0].pointBackgroundColor = newData.color.replace('0.5', '1');
+            spectrumChart.update();
+        }
+    });
+
+    // Animated Stats
+    const animateValue = (obj, start, end, duration) => {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    };
+
+    const speedStat = document.getElementById('speed-stat');
+    const costStat = document.getElementById('cost-stat');
+    animateValue(speedStat, 1, 30, 2000);
+    animateValue(costStat, 1, 90, 2000);
+
+    // Collaboration Tabs
+    const collabTabsContainer = document.getElementById('collab-tabs');
+    const collabContentContainer = document.getElementById('collab-content');
+    const collabData = [
+        { 
+            title: 'Define Roles', 
+            icon: '�',
+            content: `
+                <h4 class="text-xl font-semibold mb-2">Human as "Navigator", AI as "Driver"</h4>
+                <p class="text-slate-600 mb-4">Effective collaboration starts with clear roles. The human developer acts as the strategic decision-maker, providing context, validating suggestions, and handling complex problem-solving. The AI agent functions as an industrious assistant, rapidly generating code, detecting errors, and suggesting optimizations.</p>
+                <ul class="space-y-2 list-disc list-inside text-slate-600">
+                    <li><strong>Human (Navigator):</strong> Sets goals, validates output, handles creative challenges.</li>
+                    <li><strong>AI (Driver):</strong> Generates code, detects bugs, offers solutions.</li>
+                </ul>
+            `
+        },
+        { 
+            title: 'Iterative Validation', 
+            icon: '🔄',
+            content: `
+                <h4 class="text-xl font-semibold mb-2">Review, Refine, Repeat</h4>
+                <p class="text-slate-600 mb-4">Don't expect perfect code on the first try. Use an iterative approach: generate a rough implementation, ask the AI for alternatives, and request refinements. Critically review all AI-generated code for security vulnerabilities, edge cases, and performance issues.</p>
+                 <ul class="space-y-2 list-disc list-inside text-slate-600">
+                    <li>Verify security practices like input validation.</li>
+                    <li>Meticulously check for edge case handling.</li>
+                    <li>Evaluate performance to avoid inefficient algorithms.</li>
+                </ul>
+            `
+        },
+        { 
+            title: 'Security & Ethics', 
+            icon: '🛡️',
+            content: `
+                <h4 class="text-xl font-semibold mb-2">Human-in-the-Loop is Essential</h4>
+                <p class="text-slate-600 mb-4">AI agents lack a moral compass. For ethical and secure development, human oversight is non-negotiable. Implement "human-in-the-loop" approval steps and use responsible AI platforms to manage risk, ensure compliance, and build trustworthy systems.</p>
+                 <ul class="space-y-2 list-disc list-inside text-slate-600">
+                    <li>Incorporate manual overrides and safety checks.</li>
+                    <li>Establish clear behavioral boundaries for AI responses.</li>
+                    <li>Leverage specialized AI governance tools.</li>
+                </ul>
+            `
+        }
+    ];
+
+    collabData.forEach((tab, index) => {
+        const tabButton = document.createElement('button');
+        tabButton.className = `collab-tab -mb-px border-b-2 py-3 px-1 sm:px-4 text-sm sm:text-base font-medium transition ${index === 0 ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`;
+        tabButton.innerHTML = `<span class="hidden sm:inline">${tab.icon}</span> ${tab.title}`;
+        tabButton.onclick = () => showCollabContent(index);
+        collabTabsContainer.appendChild(tabButton);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = `collab-content-panel ${index !== 0 ? 'hidden' : ''}`;
+        contentDiv.innerHTML = tab.content;
+        collabContentContainer.appendChild(contentDiv);
+    });
+
+    window.showCollabContent = (index) => {
+        document.querySelectorAll('.collab-tab').forEach((btn, i) => {
+            btn.classList.toggle('border-indigo-500', i === index);
+            btn.classList.toggle('text-indigo-600', i === index);
+            btn.classList.toggle('border-transparent', i !== index);
+            btn.classList.toggle('text-slate-500', i !== index);
+        });
+        document.querySelectorAll('.collab-content-panel').forEach((panel, i) => {
+            panel.classList.toggle('hidden', i !== index);
+        });
+    };
+
+    // Active Nav Link on Scroll
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === entry.target.id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: "-50% 0px -50% 0px" });
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+
+});
+
+// Modal functions
+const modal = document.getElementById('toolModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+
+async function generateUseCases(toolName, toolCategory, toolUseCases) {
+    const generateBtn = document.getElementById('generateUseCasesBtn');
+    const generatedContentArea = document.getElementById('generatedUseCases');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const apiKeyInput = document.getElementById('geminiApiKeyInput'); // Get the API key input
+
+    let currentApiKey = "";
+    if (toolName === 'ChatGPT / Google Gemini') {
+        currentApiKey = apiKeyInput.value;
+        if (!currentApiKey) {
+            generatedContentArea.innerHTML = `<p class="text-red-500 mt-4">Please enter your Gemini API Key to generate use cases.</p>`;
+            return;
+        }
+    }
+
+    generateBtn.disabled = true;
+    loadingSpinner.classList.remove('hidden');
+    generatedContentArea.innerHTML = ''; // Clear previous content
+
+    const prompt = `Brainstorm 3-5 creative and specific use cases for an AI tool named "${toolName}", which is primarily used for "${toolCategory}". Its current stated use cases are: "${toolUseCases}". Focus on scenarios that might not be immediately obvious but demonstrate its potential. Format as a bulleted list.`;
+
+    let chatHistory = [];
+    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+    const payload = { contents: chatHistory };
+    const apiKey = currentApiKey; // Use the provided API key
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    let retryCount = 0;
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+
+    while (retryCount < maxRetries) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                if (response.status === 429 && retryCount < maxRetries - 1) { // Too Many Requests
+                    const delay = baseDelay * Math.pow(2, retryCount);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    retryCount++;
+                    continue; // Retry the request
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            }
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                generatedContentArea.innerHTML = `<h5 class="font-semibold text-slate-800 mt-4 mb-2">More Use Cases:</h5><div class="bg-indigo-50 p-3 rounded-lg text-slate-700">${text.replace(/\n/g, '<br>')}</div>`;
+            } else {
+                generatedContentArea.innerHTML = `<p class="text-red-500 mt-4">Could not generate use cases. Please try again.</p>`;
+            }
+            break; // Exit loop on success
+        } catch (error) {
+            console.error('Error generating use cases:', error);
+            generatedContentArea.innerHTML = `<p class="text-red-500 mt-4">Failed to generate use cases: ${error.message}.</p>`;
+            break; // Exit loop on error
+        } finally {
+            loadingSpinner.classList.add('hidden');
+            generateBtn.disabled = false;
+        }
+    }
+}
+
+
+function showModal(tool) {
+    modalTitle.textContent = tool.name;
+    modalBody.innerHTML = `
+        <p class="text-lg text-indigo-600 font-semibold mb-4">${tool.category}</p>
+        <div class="space-y-6">
+            <div>
+                <h4 class="font-semibold text-slate-800 mb-1">Primary Use Cases</h4>
+                <p class="text-slate-600">${tool.useCases}</p>
+            </div>
+            <div>
+                <h4 class="font-semibold text-slate-800 mb-1">Strengths</h4>
+                <p class="text-green-700 bg-green-50 p-3 rounded-lg">${tool.strengths}</p>
+            </div>
+            <div>
+                <h4 class="font-semibold text-slate-800 mb-1">Weaknesses</h4>
+                <p class="text-red-700 bg-red-50 p-3 rounded-lg">${tool.weaknesses}</p>
+            </div>
+            <div>
+                <h4 class="font-semibold text-slate-800 mb-1">Pricing Model</h4>
+                <p class="text-slate-600">${tool.pricing}</p>
+            </div>
+            ${tool.link ? `
+            <div>
+                <h4 class="font-semibold text-slate-800 mb-1">Learn More / Try It</h4>
+                <a href="${tool.link}" target="_blank" class="text-indigo-600 hover:underline">Visit Website &rarr;</a>
+            </div>
+            ` : ''}
+            <div class="flex items-center space-x-2">
+                ${tool.name === 'ChatGPT / Google Gemini' ? `
+                <div class="w-full">
+                    <label for="geminiApiKeyInput" class="block text-sm font-medium text-slate-700 mb-1">Enter your Gemini API Key (required for generation):</label>
+                    <input type="text" id="geminiApiKeyInput" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2" placeholder="YOUR_GEMINI_API_KEY">
+                </div>
+                ` : ''}
+                <button id="generateUseCasesBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition" onclick="generateUseCases('${tool.name}', '${tool.category}', '${tool.useCases.replace(/'/g, "\\'")}')">
+                    ✨ Generate More Use Cases
+                </button>
+                <div id="loadingSpinner" class="loading-spinner hidden"></div>
+            </div>
+            <div id="generatedUseCases" class="mt-4"></div>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on escape key
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+</script>
+
+</body>
+</html>
+�
